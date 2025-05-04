@@ -79,7 +79,7 @@ static const int kPngHeaderSize = 8;
 
 // Entry point for LibFuzzer.
 // Roughly follows the libpng book example:
-// http://www.libpng.org/pub/png/book/chapter13.html
+// http://www.libpng.org/pub/png/book/chapter15.html
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   
   return 0;
