@@ -14,11 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Revisions by Glenn Randers-Pehrson, 2017:
-# 1. Build only the library, not the tools (changed "make -j$(nproc) all" to
-#     "make -j$(nproc) libpng16.la").
-# 2. Disabled WARNING and WRITE options in pnglibconf.dfa.
-# 3. Build zlib alongside libpng
 ################################################################################
 
 # Disable logging via library build configuration control.
@@ -29,15 +24,19 @@ cat scripts/pnglibconf.dfa | \
 > scripts/pnglibconf.dfa.temp
 mv scripts/pnglibconf.dfa.temp scripts/pnglibconf.dfa
 
-# Fix configure script issues
-# Search for the line with the RISC-V syntax error and fix it
-if grep -q "riscv\*)" configure; then
-  sed -i 's/riscv\*)/riscv\*-\*)/' configure
-fi
+# Skip autoreconf and use direct configure script
+# We'll manually modify the configure script
+./configure --with-libpng-prefix=OSS_FUZZ_ || {
+  # If configure fails due to the RISC-V error, apply fix and retry
+  if [ -f "configure" ]; then
+    # Fix the syntax error in the configure script
+    sed -i 's/riscv\*)/riscv\*-\*)/' configure
+    # Try configure again with the fix
+    ./configure --with-libpng-prefix=OSS_FUZZ_
+  fi
+}
 
-# build the libpng library.
-autoreconf -f -i
-./configure --with-libpng-prefix=OSS_FUZZ_
+# Build the libpng library
 make -j$(nproc) clean
 make -j$(nproc) libpng16.la
 
