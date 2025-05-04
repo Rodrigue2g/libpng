@@ -14,37 +14,34 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# Revisions by Glenn Randers-Pehrson, 2017:
-# 1. Build only the library, not the tools (changed "make -j$(nproc) all" to
-#     "make -j$(nproc) libpng16.la").
-# 2. Disabled WARNING and WRITE options in pnglibconf.dfa.
-# 3. Build zlib alongside libpng
+
+################################################################################
+# This script builds libpng with custom config for OSS-Fuzz write fuzzer.
+# It disables STDIO and WARNING but keeps WRITE support enabled.
 ################################################################################
 
-# Disable logging via library build configuration control.
-cat scripts/pnglibconf.dfa | \
-  sed -e "s/option STDIO/option STDIO disabled/" \
-      -e "s/option WARNING /option WARNING disabled/" \
-      # -e "s/option WRITE enables WRITE_INT_FUNCTIONS/option WRITE disabled/" \
-> scripts/pnglibconf.dfa.temp
+# Modify pnglibconf.dfa to disable STDIO and WARNING logging (keep WRITE enabled).
+sed -e "s/option STDIO/option STDIO disabled/" \
+    -e "s/option WARNING /option WARNING disabled/" \
+    scripts/pnglibconf.dfa > scripts/pnglibconf.dfa.temp
 mv scripts/pnglibconf.dfa.temp scripts/pnglibconf.dfa
 
-# build the libpng library.
+# Regenerate configure scripts and build libpng library (without tools).
 autoreconf -f -i
 ./configure --with-libpng-prefix=OSS_FUZZ_
-make -j$(nproc) clean
-make -j$(nproc) libpng16.la
+make -j"$(nproc)" clean
+make -j"$(nproc)" libpng16.la
 
-# build libpng_write_fuzzer.
+# Build the write fuzzer binary.
 $CXX $CXXFLAGS -std=c++11 -I. \
-     $SRC/libpng/contrib/oss-fuzz/libpng_write_fuzzer.cc \
-     -o $OUT/libpng_write_fuzzer \
-     -lFuzzingEngine .libs/libpng16.a -lz
+     "$SRC/libpng/contrib/oss-fuzz/libpng_write_fuzzer.cc" \
+     -o "$OUT/libpng_write_fuzzer" \
+     .libs/libpng16.a -lz -lFuzzingEngine
 
-# add seed corpus.
-find $SRC/libpng -name "*.png" | grep -v crashers | \
-     xargs zip $OUT/libpng_write_fuzzer_seed_corpus.zip
+# Create seed corpus ZIP (avoid crashers and handle spaces).
+find "$SRC/libpng" -name "*.png" ! -path "*crashers*" -print0 | \
+  zip -q -@ -0 "$OUT/libpng_write_fuzzer_seed_corpus.zip" --names-stdin -0 -0 -0
 
-cp $SRC/libpng/contrib/oss-fuzz/*.dict \
-     $SRC/libpng/contrib/oss-fuzz/*.options $OUT/
+# Copy dictionary and fuzzer options if present.
+cp "$SRC/libpng/contrib/oss-fuzz/"*.dict "$SRC/libpng/contrib/oss-fuzz/"*.options "$OUT/" || true
+
