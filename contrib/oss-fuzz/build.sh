@@ -1,5 +1,4 @@
 #!/bin/bash -eu
-
 # Copyright 2017-2018 Glenn Randers-Pehrson
 # Copyright 2016 Google Inc.
 #
@@ -30,6 +29,12 @@ cat scripts/pnglibconf.dfa | \
 > scripts/pnglibconf.dfa.temp
 mv scripts/pnglibconf.dfa.temp scripts/pnglibconf.dfa
 
+# Fix configure script issues
+# Search for the line with the RISC-V syntax error and fix it
+if grep -q "riscv\*)" configure; then
+  sed -i 's/riscv\*)/riscv\*-\*)/' configure
+fi
+
 # build the libpng library.
 autoreconf -f -i
 ./configure --with-libpng-prefix=OSS_FUZZ_
@@ -45,6 +50,5 @@ $CXX $CXXFLAGS -std=c++11 -I. \
 # add seed corpus.
 find $SRC/libpng -name "*.png" | grep -v crashers | \
      xargs zip $OUT/libpng_write_fuzzer_seed_corpus.zip
-
 cp $SRC/libpng/contrib/oss-fuzz/*.dict \
      $SRC/libpng/contrib/oss-fuzz/*.options $OUT/
