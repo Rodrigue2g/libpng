@@ -1,4 +1,5 @@
 #!/bin/bash -eu
+
 # Copyright 2017-2018 Glenn Randers-Pehrson
 # Copyright 2016 Google Inc.
 #
@@ -14,6 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# Revisions by Glenn Randers-Pehrson, 2017:
+# 1. Build only the library, not the tools (changed "make -j$(nproc) all" to
+#     "make -j$(nproc) libpng16.la").
+# 2. Disabled WARNING and WRITE options in pnglibconf.dfa.
+# 3. Build zlib alongside libpng
 ################################################################################
 
 # Disable logging via library build configuration control.
@@ -24,30 +30,21 @@ cat scripts/pnglibconf.dfa | \
 > scripts/pnglibconf.dfa.temp
 mv scripts/pnglibconf.dfa.temp scripts/pnglibconf.dfa
 
-# Skip autoreconf and use direct configure script
-# We'll manually modify the configure script
-./configure --with-libpng-prefix=OSS_FUZZ_ || {
-  # If configure fails due to the RISC-V error, apply fix and retry
-  if [ -f "configure" ]; then
-    # Fix the syntax error in the configure script
-    sed -i 's/riscv\*)/riscv\*-\*)/' configure
-    # Try configure again with the fix
-    ./configure --with-libpng-prefix=OSS_FUZZ_
-  fi
-}
-
-# Build the libpng library
+# build the libpng library.
+autoreconf -f -i
+./configure --with-libpng-prefix=OSS_FUZZ_
 make -j$(nproc) clean
 make -j$(nproc) libpng16.la
 
-# build libpng_write_fuzzer.
+# build libpng_read_fuzzer.
 $CXX $CXXFLAGS -std=c++11 -I. \
-     $SRC/libpng/contrib/oss-fuzz/libpng_write_fuzzer.cc \
-     -o $OUT/libpng_write_fuzzer \
+     $SRC/libpng/contrib/oss-fuzz/libpng_read_fuzzer.cc \
+     -o $OUT/libpng_read_fuzzer \
      -lFuzzingEngine .libs/libpng16.a -lz
 
 # add seed corpus.
 find $SRC/libpng -name "*.png" | grep -v crashers | \
-     xargs zip $OUT/libpng_write_fuzzer_seed_corpus.zip
+     xargs zip $OUT/libpng_read_fuzzer_seed_corpus.zip
+
 cp $SRC/libpng/contrib/oss-fuzz/*.dict \
      $SRC/libpng/contrib/oss-fuzz/*.options $OUT/
