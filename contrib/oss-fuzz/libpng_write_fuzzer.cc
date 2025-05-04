@@ -1,4 +1,4 @@
-// libpng_read_fuzzer.cc
+// libpng_write_fuzzer.cc
 // Copyright 2017-2018 Glenn Randers-Pehrson
 // Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that may
@@ -51,7 +51,7 @@ struct PngObjectHandler {
       png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
     else if (info_ptr)
       png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-    else
+    else if (png_ptr)  // Fixed: Check if png_ptr exists before destroying
       png_destroy_read_struct(&png_ptr, nullptr, nullptr);
     delete buf_state;
   }
@@ -139,7 +139,16 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   // Allocate row buffer
   size_t rowbytes = png_get_rowbytes(png_handler.png_ptr, png_handler.info_ptr);
+  if (rowbytes == 0 || rowbytes > 1024*1024) { // Safety check for extremely large allocations
+    PNG_CLEANUP
+    return 0;
+  }
+  
   png_handler.row_ptr = png_malloc(png_handler.png_ptr, rowbytes);
+  if (!png_handler.row_ptr) {
+    PNG_CLEANUP
+    return 0;
+  }
 
   size_t input_index = 7;
   for (uint32_t y = 0; y < height; ++y) {
@@ -155,4 +164,3 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   PNG_CLEANUP
   return 0;
 }
-
