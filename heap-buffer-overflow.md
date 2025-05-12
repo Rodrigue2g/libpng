@@ -1,6 +1,6 @@
 # heap-buffer-overflow opportunity in png_set_iCCP() / png_write_iCCP()
 
-From issue [#648](https://github.com/pnggroup/libpng/issues/648) we got that if the allocation size of the 'profile' argument passed to png_write_iCCP() is less than 4 bytes, there is a heap overflow that occurs in `pngwutil.c` at line 1151:
+From issue [#648](https://github.com/pnggroup/libpng/issues/648) we got that if the allocation size of the 'profile' argument passed to png_write_iCCP() is less than 4 bytes, there is a heap overflow that occurs in `pngwutil.c` at line [1151](https://github.com/Rodrigue2g/libpng/blob/c4b20d0a3a7a53a0480a4c21c68b2c1794512629/pngwutil.c#L1151):
 
 ```c
    /* These are all internal problems: the profile should have been checked
@@ -14,7 +14,7 @@ From issue [#648](https://github.com/pnggroup/libpng/issues/648) we got that if 
    if (profile_len < 132)
       png_error(png_ptr, "ICC profile too short");
 ```
-
+Here, png_write_iCCP uses the length from the first four bytes of the profile set by png_set_iCCP rather than the actual data length recored by png_set_iCCP. This results in a read-beyond-end-of-malloc bug (at `profile_len = png_get_uint_32(profile);`) if the profile data is less than 4 bytes long.
 
 With the following [POC](poc_iccp.c), we managed to reproduce the bug:
 ```c
@@ -181,3 +181,44 @@ $ ./png_gui
 
 You can then either upload a valid png that will be correctly displayed, or malformed_iccp.png which will crash the programm. 
 A more sophisticatedly crafted png could possibly hijack the control flow leading to a potential RCE.
+
+## Proposed fix
+Of course there are some obious mitigations to this bug that the carefull programmer should have already implemented.
+The first, most straight-forward one (although it might not be sufficient to cover all cases) is to wrapp the call to `png_set_iCCP` in `png_get_iCCP` or `png_get_valid`:
+```c
+if (png_get_valid(png_ptr, info_ptr, PNG_INFO_iCCP)) {
+    // The iCCP chunk is valid
+    png_set_iCCP(write_ptr, write_info, name, compression, profile, png_get_uint_32(profile));
+} else {
+    // The iCCP chunk is invalid
+}
+// Or 
+if (png_get_iCCP(png_ptr, info_ptr, &name, &compression, &profile, &len);) {
+  png_set_iCCP(write_ptr, write_info, name, compression, profile, len);
+}
+```
+Then, a more reliable fix is the one now implemented in the libpng library:
+```c
+
+png_write_iCCP(png_structrp png_ptr, png_const_charp name,
+-              png_const_bytep profile)
++              png_const_bytep profile, png_uint_32 profile_len)
+{
+...
+
+- png_uint_32 profile_len;
+
+...
+
+- profile_len = png_get_uint_32(profile);
+
+...
+
++ if (png_get_uint_32(profile) != profile_len)
++   png_error(png_ptr, "Incorrect data in iCCP");
+
+...
+}
+```
+
+Where png_write_iCCP doesn't use the first four bytes of the ICC profile data to determine the profile_len anymore. Instead, it uses the actual data length with the explicit profile_len value provided to png_set_iCCP.
