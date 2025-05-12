@@ -1131,10 +1131,17 @@ png_write_sRGB(png_structrp png_ptr, int srgb_intent)
 #ifdef PNG_WRITE_iCCP_SUPPORTED
 /* Write an iCCP chunk */
 void /* PRIVATE */
+/*--- Old Version ---*/
 png_write_iCCP(png_structrp png_ptr, png_const_charp name,
-    png_const_bytep profile, png_uint_32 profile_len)
+    png_const_bytep profile)
+/*--- New (fixed) Version ---*/
+// png_write_iCCP(png_structrp png_ptr, png_const_charp name,
+//     png_const_bytep profile, png_uint_32 profile_len)
 {
    png_uint_32 name_len;
+   /*--- Old Version (added `png_uint_32 profile_len;`) ---*/
+   png_uint_32 profile_len;
+   /*--- New (fixed) Version (just rm previous line) ---*/
    png_byte new_name[81]; /* 1 byte for the compression byte */
    compression_state comp;
    png_uint_32 temp;
@@ -1146,6 +1153,10 @@ png_write_iCCP(png_structrp png_ptr, png_const_charp name,
     */
    if (profile == NULL)
       png_error(png_ptr, "No profile for iCCP chunk"); /* internal error */
+
+   /*--- Old Version (added `profile_len = png_get_uint_32(profile);`) ---*/
+   profile_len = png_get_uint_32(profile);
+   /*--- New (fixed) Version (just rm previous line) ---*/
 
    if (profile_len < 132)
       png_error(png_ptr, "ICC profile too short");
