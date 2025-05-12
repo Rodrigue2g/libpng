@@ -1256,6 +1256,15 @@ PNG_INTERNAL_FUNCTION(void,png_write_eXIf,(png_structrp png_ptr,
 #endif
 
 #ifdef PNG_WRITE_iCCP_SUPPORTED
+/*--- Old Version ---*/
+// PNG_INTERNAL_FUNCTION(void,png_write_iCCP,(png_structrp png_ptr,
+//    png_const_charp name, png_const_bytep profile), PNG_EMPTY);
+   /* The profile must have been previously validated for correctness, the
+    * length comes from the first four bytes.  Only the base, deflate,
+    * compression is supported.
+    */
+/*--- Old Version eof ---*/
+/*--- New (fixed) Version ---*/
 PNG_INTERNAL_FUNCTION(void,png_write_iCCP,(png_structrp png_ptr,
    png_const_charp name, png_const_bytep profile, png_uint_32 proflen),
    PNG_EMPTY);
