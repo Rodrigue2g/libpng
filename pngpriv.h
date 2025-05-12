@@ -19,20 +19,8 @@
  * they should be well aware of the issues that may arise from doing so.
  */
 
-
-/* pngpriv.h must be included first in each translation unit inside libpng.
- * On the other hand, it must not be included at all, directly or indirectly,
- * by any application code that uses the libpng API.
- */
 #ifndef PNGPRIV_H
-#  define PNGPRIV_H
-#else
-#  error Duplicate inclusion of pngpriv.h; please check the libpng source files
-#endif
-
-#if defined(PNG_H) || defined(PNGCONF_H) || defined(PNGLCONF_H)
-#  error This file must not be included by applications; please include <png.h>
-#endif
+#define PNGPRIV_H
 
 /* Feature Test Macros.  The following are defined here to ensure that correctly
  * implemented libraries reveal the APIs libpng needs to build and hide those
@@ -69,6 +57,7 @@
  */
 #if defined(HAVE_CONFIG_H) && !defined(PNG_NO_CONFIG_H)
 #  include <config.h>
+
    /* Pick up the definition of 'restrict' from config.h if it was read: */
 #  define PNG_RESTRICT restrict
 #endif
@@ -78,7 +67,9 @@
  * are not internal definitions may be required.  This is handled below just
  * before png.h is included, but load the configuration now if it is available.
  */
-#include "pnglibconf.h"
+#ifndef PNGLCONF_H
+#  include "pnglibconf.h"
+#endif
 
 /* Local renames may change non-exported API functions from png.h */
 #if defined(PNG_PREFIX) && !defined(PNGPREFIX_H)
@@ -140,32 +131,6 @@
 #     define PNG_ARM_NEON_OPT 2
 #  else
 #     define PNG_ARM_NEON_OPT 0
-#  endif
-#endif
-
-#ifndef PNG_RISCV_RVV_OPT
-   /* RISCV_RVV optimizations are being controlled by the compiler settings,
-    * typically the target FPU then the compiler will define __RVV__ and we can rely
-    * unconditionally on NEON instructions not crashing, otherwise we must
-    * disable use of NEON instructions.
-    *
-    * NOTE: at present these optimizations depend on 'ALIGNED_MEMORY', so they
-    * can only be turned on automatically if that is supported too. If
-    * PNG_RISCV_RVV_OPT is set in CPPFLAGS (to >0) then riscv/riscv_init.c will fail
-    * to compile with an appropriate #error if ALIGNED_MEMORY has been turned
-    * off.
-    *
-    * Note that gcc and clang use the same __RVV__ flag. No known variations
-    * of this name is know as writing this code.
-    *
-    * To disable RISCV_RVV optimizations entirely, and skip compiling the
-    * associated assembler code, pass --enable-riscv-rvv=no to configure
-    * or put -DPNG_RISCV_RVV_OPT=0 in CPPFLAGS.
-    */
-#  if defined(__RVV__) && defined(PNG_ALIGNED_MEMORY_SUPPORTED)
-#     define PNG_RISCV_RVV_OPT 2
-#  else
-#     define PNG_RISCV_RVV_OPT 0
 #  endif
 #endif
 
@@ -312,16 +277,6 @@
 #   define PNG_LOONGARCH_LSX_IMPLEMENTATION 1
 #else
 #   define PNG_LOONGARCH_LSX_IMPLEMENTATION 0
-#endif
-
-#if PNG_RISCV_RVV_OPT > 0
-#  define PNG_FILTER_OPTIMIZATIONS png_init_filter_functions_rvv
-#  ifndef PNG_RISCV_RVV_IMPLEMENTATION
-      /* Use the intrinsics code by default. */
-#     define PNG_RISCV_RVV_IMPLEMENTATION 1
-#  endif
-#else
-#  define PNG_RISCV_RVV_IMPLEMENTATION 0
 #endif
 
 /* Is this a build of a DLL where compilation of the object modules requires
@@ -1036,15 +991,17 @@
  * must match that used in the build, or we must be using pnglibconf.h.prebuilt:
  */
 #if PNG_ZLIB_VERNUM != 0 && PNG_ZLIB_VERNUM != ZLIB_VERNUM
-#  error The include path of <zlib.h> is incorrect
-   /* When pnglibconf.h was built, the copy of zlib.h that it used was not the
-    * same as the one being used here.  Considering how libpng makes decisions
-    * to use the zlib API based on the zlib version number, the -I options must
-    * match.
+#  error ZLIB_VERNUM != PNG_ZLIB_VERNUM \
+      "-I (include path) error: see the notes in pngpriv.h"
+   /* This means that when pnglibconf.h was built the copy of zlib.h that it
+    * used is not the same as the one being used here.  Because the build of
+    * libpng makes decisions to use inflateInit2 and inflateReset2 based on the
+    * zlib version number and because this affects handling of certain broken
+    * PNG files the -I directives must match.
     *
-    * A possible cause of this mismatch is that you passed an -I option in
-    * CFLAGS, which is unlikely to work.  All the preprocessor options, and all
-    * the -I options in particular, should be in CPPFLAGS.
+    * The most likely explanation is that you passed a -I in CFLAGS. This will
+    * not work; all the preprocessor directives and in particular all the -I
+    * directives must be in CPPFLAGS.
     */
 #endif
 
@@ -1555,23 +1512,6 @@ PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg4_lsx,(png_row_infop
 PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_lsx,(png_row_infop
     row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_lsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-#endif
-
-#if PNG_RISCV_RVV_OPT > 0
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_up_rvv,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub3_rvv,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub4_rvv,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg3_rvv,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg4_rvv,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_rvv,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_rvv,(png_row_infop
     row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
 #endif
 
@@ -2187,11 +2127,6 @@ PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_lsx,
     (png_structp png_ptr, unsigned int bpp), PNG_EMPTY);
 #endif
 
-#  if PNG_RISCV_RVV_OPT > 0
-PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_rvv,
-   (png_structp png_ptr, unsigned int bpp), PNG_EMPTY);
-#endif
-
 PNG_INTERNAL_FUNCTION(png_uint_32, png_check_keyword, (png_structrp png_ptr,
    png_const_charp key, png_bytep new_key), PNG_EMPTY);
 
@@ -2227,3 +2162,4 @@ PNG_INTERNAL_FUNCTION(int,
 #endif
 
 #endif /* PNG_VERSION_INFO_ONLY */
+#endif /* PNGPRIV_H */
