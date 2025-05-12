@@ -163,21 +163,21 @@ zsh: abort      ./poc_iccp
 ```
 
 ## Minimal "real-life" example
-In [vulnerable-png-reader](vulnerable-png-reader.c) you can find a small png reader that lets a user select a file and writes it back with png_set_iCCP...
-
-```sh
-gcc vulnerable-png-reader.c -o png_gui \
-  `pkg-config --cflags gtk+-3.0` \
-  `pkg-config --libs gtk+-3.0` \
-  -lpng
-```
-Then run
-```sh
-$ ./png_gui
-```
-
+In [vulnerable-png-reader](vulnerable-png-reader.c) you can find a very basic png reader that lets a user select an image to display. It simulates what an actual programm would do to write back the png (for example if it where to modify it) by calling png_set_iCCP (if the original image contains an iCCP chunk). In order to trigger this vulnerability here, you can create a [malicious png](generate_bad_iccp_png.py) with:
 ```sh
 $ python3 create_malformed_iccp_png.py
 ```
 
-You can upload valid png that will be correctly displayed and malformed_iccp.png will crash the programm. A more sofisticately crafted png could potentially hijack control flow leading to a potential RCE...
+You can then build and run this POC:
+
+```sh
+$ gcc vulnerable-png-reader.c -o png_gui \
+  `pkg-config --cflags gtk+-3.0` \
+  `pkg-config --libs gtk+-3.0` \
+  -lpng
+
+$ ./png_gui
+```
+
+You can then either upload a valid png that will be correctly displayed, or malformed_iccp.png which will crash the programm. 
+A more sophisticatedly crafted png could possibly hijack the control flow leading to a potential RCE.
