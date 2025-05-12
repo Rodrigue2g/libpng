@@ -161,3 +161,23 @@ Shadow byte legend (one shadow byte represents 8 application bytes):
 ==17600==ABORTING
 zsh: abort      ./poc_iccp
 ```
+
+## Minimal "real-life" example
+In [vulnerable-png-reader](vulnerable-png-reader.c) you can find a small png reader that lets a user select a file and writes it back with png_set_iCCP...
+
+```sh
+gcc vulnerable-png-reader.c -o png_gui \
+  `pkg-config --cflags gtk+-3.0` \
+  `pkg-config --libs gtk+-3.0` \
+  -lpng
+```
+Then run
+```sh
+$ ./png_gui
+```
+
+```sh
+$ python3 create_malformed_iccp_png.py
+```
+
+You can upload valid png that will be correctly displayed and malformed_iccp.png will crash the programm. A more sofisticately crafted png could potentially hijack control flow leading to a potential RCE...
