@@ -1,7 +1,8 @@
 #include <gtk/gtk.h>
-#include <png.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "png.h"
 
 static void on_open_file(GtkWidget *widget, gpointer user_data) {
     GtkWidget *dialog;
