@@ -196,10 +196,10 @@ png_write_info_before_PLTE(png_structrp png_ptr, png_const_inforp info_ptr)
          if ((info_ptr->valid & PNG_INFO_iCCP) != 0)
          {  
             /*--- Old Version ---*/
-            // png_write_iCCP(png_ptr, info_ptr->iccp_name, info_ptr->iccp_profile);
+            png_write_iCCP(png_ptr, info_ptr->iccp_name, info_ptr->iccp_profile);
             /*--- New (fixed) Version ---*/
-            png_write_iCCP(png_ptr, info_ptr->iccp_name,
-                info_ptr->iccp_profile, info_ptr->iccp_proflen);
+            // png_write_iCCP(png_ptr, info_ptr->iccp_name,
+            //     info_ptr->iccp_profile, info_ptr->iccp_proflen);
          }
 #  endif
 
