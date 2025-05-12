@@ -163,7 +163,7 @@ zsh: abort      ./poc_iccp
 ```
 
 ## Minimal "real-life" example
-In [vulnerable-png-reader](vulnerable-png-reader.c) you can find a very basic png reader that lets a user select an image to display. It simulates what an actual programm would do to write back the png (for example if it where to modify it) by calling png_set_iCCP (if the original image contains an iCCP chunk). In order to trigger this vulnerability here, you can create a [malicious png](generate_bad_iccp_png.py) with:
+In [vulnerable-png-reader.c](vulnerable-png-reader.c) you can find a very basic png reader that lets a user select an image to display. It simulates what an actual programm would do to write back the png (for example if it where to modify it) by calling png_set_iCCP (if the original image contains an iCCP chunk). In order to trigger this vulnerability here, you can create a [malicious png](generate_bad_iccp_png.py) with:
 ```sh
 $ python3 create_malformed_iccp_png.py
 ```
