@@ -1,7 +1,7 @@
-#include <png.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "png.h"
 
 int main() {
     FILE *fp = fopen("output.png", "wb");
