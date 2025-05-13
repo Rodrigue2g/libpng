@@ -245,28 +245,28 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   png_text  text[6];
   int  num_text = 6;
   text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
-  text[num_text].key = "Title";
-  text[num_text].text = "Test image";
+  text[num_text].key = const_cast<png_charp>("Title");
+  text[num_text].text = const_cast<png_charp>("Test image");
 
   text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
-  text[num_text].key = "Author";
-  text[num_text].text = "Rodrigue2g";
+  text[num_text].key = const_cast<png_charp>("Author");
+  text[num_text].text = const_cast<png_charp>("Rodrigue2g");
   
   text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
-  text[num_text].key = "Description";
-  text[num_text].text = "Png test description for OSS-Fuzz";
+  text[num_text].key = const_cast<png_charp>("Description");
+  text[num_text].text = const_cast<png_charp>("Png test description for OSS-Fuzz");
   
   text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
-  text[num_text].key = "Copyright";
-  text[num_text].text = "2025 - All rights reserved.";
+  text[num_text].key = const_cast<png_charp>("Copyright");
+  text[num_text].text = const_cast<png_charp>("2025 - All rights reserved.");
   
   text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
-  text[num_text].key = "E-mail";
-  text[num_text].text = "email@example.com";
+  text[num_text].key = const_cast<png_charp>("E-mail");
+  text[num_text].text = const_cast<png_charp>("email@example.com");
   
   text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
-  text[num_text].key = "URL";
-  text[num_text].text = "https://www.example.com";
+  text[num_text].key = const_cast<png_charp>("URL");
+  text[num_text].text = const_cast<png_charp>("https://www.example.com");
   png_set_text(png_handler.png_ptr, png_handler.info_ptr, text, num_text);
 
 
