@@ -243,30 +243,36 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   
   /*---- Set the text of the png ----*/
   png_text  text[6];
-  int  num_text = 6;
+  int  num_text = 0;
   text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
   text[num_text].key = const_cast<png_charp>("Title");
   text[num_text].text = const_cast<png_charp>("Test image");
-
+  ++num_text;
+  
   text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
   text[num_text].key = const_cast<png_charp>("Author");
   text[num_text].text = const_cast<png_charp>("Rodrigue2g");
+  ++num_text;
   
   text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
   text[num_text].key = const_cast<png_charp>("Description");
   text[num_text].text = const_cast<png_charp>("Png test description for OSS-Fuzz");
+  ++num_text;
   
   text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
   text[num_text].key = const_cast<png_charp>("Copyright");
   text[num_text].text = const_cast<png_charp>("2025 - All rights reserved.");
+  ++num_text;
   
   text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
   text[num_text].key = const_cast<png_charp>("E-mail");
   text[num_text].text = const_cast<png_charp>("email@example.com");
+  ++num_text;
   
   text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
   text[num_text].key = const_cast<png_charp>("URL");
   text[num_text].text = const_cast<png_charp>("https://www.example.com");
+  ++num_text;
   png_set_text(png_handler.png_ptr, png_handler.info_ptr, text, num_text);
 
 
