@@ -157,14 +157,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   // if (size < 8) or 16
   if (size < 32) return 0;
 
-  // uint32_t width = (data[0] << 8) | data[1];
-  // uint32_t height = (data[2] << 8) | data[3];
+  uint32_t width = (data[0] << 8) | data[1];
+  uint32_t height = (data[2] << 8) | data[3];
   // int bit_depth = 8;
   // int color_type = PNG_COLOR_TYPE_RGBA;
-  // if (width == 0 || height == 0 || width > 1024 || height > 1024) return 0;
+  if (width == 0 || height == 0 || width > 1024 || height > 1024) return 0;
 
-  uint32_t width = ((data[0] << 8) | data[1]) % 1024 + 1;
-  uint32_t height = ((data[2] << 8) | data[3]) % 1024 + 1;
+  // uint32_t width = ((data[0] << 8) | data[1]) % 1024 + 1;
+  // uint32_t height = ((data[2] << 8) | data[3]) % 1024 + 1;
 
   int bit_depth_options[] = {1, 2, 4, 8};
   int bit_depth = bit_depth_options[data[4] % 4];
@@ -177,7 +177,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   };
   int color_type = color_type_options[data[5] % 4];
 
-  png_color_8 shift = {bit_depth / 2, bit_depth / 2, bit_depth / 2, bit_depth / 2, bit_depth / 2};
+  // png_color_8 shift = {bit_depth / 2, bit_depth / 2, bit_depth / 2, bit_depth / 2, bit_depth / 2};
   uint8_t flags = data[6];
   
   PngObjectHandler png_handler;
@@ -280,7 +280,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
    * into bytes (one, two or four pixels per byte) */
   png_set_packing(png_handler.png_ptr);
   // if (flags & 1) png_set_packing(png_handler.png_ptr);
-  if (flags & 2) png_set_shift(png_handler.png_ptr, &shift);
+  // if (flags & 2) png_set_shift(png_handler.png_ptr, &shift);
   if (flags & 4) png_set_swap_alpha(png_handler.png_ptr);
   if (flags & 8) png_set_invert_alpha(png_handler.png_ptr);
 
