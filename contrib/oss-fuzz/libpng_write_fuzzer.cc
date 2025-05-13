@@ -41,6 +41,11 @@
 
 // png_handler.end_info_ptr = nullptr; \
 
+#define Z_NO_COMPRESSION 0
+#define Z_BEST_SPEED 1
+#define Z_DEFAULT_COMPRESSION 6
+#define Z_BEST_COMPRESSION 9
+
 
 #define TEXT_TITLE    0x01
 #define TEXT_AUTHOR   0x02
@@ -219,7 +224,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
                PNG_FILTER_TYPE_DEFAULT);
 
   /*---- Set the gamma component of the png ----*/
-  png_set_gAMA(png_handler.png_ptr, png_handler.info_ptr, mainprog_ptr->gamma);
+  double default_gamma = 0.5;
+  png_set_gAMA(png_handler.png_ptr, png_handler.info_ptr, default_gamma);
 
   /* we know it's RGBA, not gray+alpha */
   png_color_16  background;
