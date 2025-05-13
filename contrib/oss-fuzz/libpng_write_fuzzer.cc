@@ -261,7 +261,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
   text[num_text].key = "URL";
   text[num_text].text = "https://www.example.com";
-  png_set_text(png_ptr, info_ptr, text, num_text);
+  png_set_text(png_handler.png_ptr, png_handler.info_ptr, text, num_text);
 
 
   // png_set_write_fn(png_handler.png_ptr, png_handler.write_buf, user_write_data, user_flush_data);
