@@ -90,11 +90,11 @@ struct PngObjectHandler {
     if (row_ptr)
       png_free(png_ptr, row_ptr);
     if (info_ptr) {
-      png_destroy_read_struct (&png_ptr, &info_ptr, nullptr);
+      png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
       png_destroy_write_struct(&png_ptr, &info_ptr);
     }
     else {
-      png_destroy_read_struct (&png_ptr, nullptr, nullptr);
+      png_destroy_read_struct(&png_ptr, nullptr, nullptr);
       png_destroy_write_struct(&png_ptr, nullptr);
     }
     delete write_buf;
