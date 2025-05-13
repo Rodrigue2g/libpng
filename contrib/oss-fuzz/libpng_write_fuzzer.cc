@@ -202,7 +202,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   /* make sure outfile is (re)opened in BINARY mode */
   // png_init_io(png_ptr, mainprog_ptr->outfile);
 
-  png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
+  png_set_compression_level(png_handler.png_ptr, Z_BEST_COMPRESSION);
 
 
   // /* limit allocations & hook up in-memory write */  -- Not sure about these two?
@@ -219,20 +219,20 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
                PNG_FILTER_TYPE_DEFAULT);
 
   /*---- Set the gamma component of the png ----*/
-  png_set_gAMA(png_ptr, info_ptr, mainprog_ptr->gamma);
+  png_set_gAMA(png_handler.png_ptr, png_handler.info_ptr, mainprog_ptr->gamma);
 
   /* we know it's RGBA, not gray+alpha */
   png_color_16  background;
   background.red = 255;
   background.green = 255;
   background.blue = 255;
-  png_set_bKGD(png_ptr, info_ptr, &background);
+  png_set_bKGD(png_handler.png_ptr, png_handler.info_ptr, &background);
 
   
   /*---- Set the time of the png ----*/
   png_time  modtime;
   png_convert_from_time_t(&modtime, time(NULL));
-  png_set_tIME(png_ptr, info_ptr, &modtime);
+  png_set_tIME(png_handler.png_ptr, png_handler.info_ptr, &modtime);
 
   
   /*---- Set the text of the png ----*/
@@ -244,7 +244,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
   text[num_text].key = "Author";
-  text[num_text].text = "Rodrigue2g;
+  text[num_text].text = "Rodrigue2g";
   
   text[num_text].compression = PNG_TEXT_COMPRESSION_NONE;
   text[num_text].key = "Description";
@@ -305,7 +305,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     }
   }
 
-  png_write_rows(png_handler.png_ptr, rows);
+  png_write_rows(png_handler.png_ptr, rows, height);
   // png_write_end(png_handler.png_ptr, nullptr);
 
   for (size_t i = 0; i < height; ++i)
