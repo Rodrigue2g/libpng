@@ -167,9 +167,7 @@ In [vulnerable-png-reader.c](vulnerable-png-reader.c) you can find a very basic 
 ```sh
 $ python3 create_malformed_iccp_png.py
 ```
-
-You can then build and run this POC:
-
+Make sure you have gtk+3 installed first (`$ brew install gtk+3` on macOS). You can then build and run this POC:
 ```sh
 $ gcc vulnerable-png-reader.c -o png_gui \
   `pkg-config --cflags gtk+-3.0` \
