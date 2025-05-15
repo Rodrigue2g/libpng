@@ -196,7 +196,7 @@ The first, most straight-forward one (although it might not be sufficient to cov
 ```c
 if (png_get_valid(png_ptr, info_ptr, PNG_INFO_iCCP)) {
     // The iCCP chunk is valid
-    png_set_iCCP(write_ptr, write_info, name, compression, profile, png_get_uint_32(profile));
+    png_set_iCCP(write_ptr, write_info, name, compression, profile, len);
 } else {
     // The iCCP chunk is invalid
 }
@@ -207,7 +207,6 @@ if (png_get_iCCP(png_ptr, info_ptr, &name, &compression, &profile, &len);) {
 ```
 Then, a more reliable fix is the one now implemented in the libpng library:
 ```c
-
 png_write_iCCP(png_structrp png_ptr, png_const_charp name,
 -              png_const_bytep profile)
 +              png_const_bytep profile, png_uint_32 profile_len)

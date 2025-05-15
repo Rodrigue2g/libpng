@@ -37,7 +37,6 @@ int main() {
      */
     const char profile_name[] = "sRGB";
     const unsigned char profile_data[] = "ABC";
-    png_const_bytep profile_ptr = profile_data;
     png_uint_32 profile_len = 3;
     int compression_type = 0;
 
@@ -48,7 +47,7 @@ int main() {
     png_set_iCCP(png_ptr, info_ptr,
                  profile_name, compression_type,
                  profile_data, profile_len);
-
+             
     /**
      * The entry point to trigger the vulnerability is here,
      * when we write the informations of the png file.
