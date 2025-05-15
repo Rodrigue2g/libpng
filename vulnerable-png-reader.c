@@ -167,18 +167,13 @@ static GdkPixbuf* load_png_with_libpng(const char *filename) {
             png_init_io(write_ptr, tmp);
             png_set_IHDR(write_ptr, write_info, 1, 1, 8, PNG_COLOR_TYPE_RGB,
                          PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
-            // png_set_iCCP(write_ptr, write_info, name, compression, profile, len); // <-- may crash
             // printf("iCCP chunk: profile_len=%u\n", len);
             // printf("iCCP chunk: png_get_uint_32(profile)=%u\n", png_get_uint_32(profile));
             // const char profile_name[] = "sRGB";
             // const png_charp profile_data = (png_charp)"ABC";
             // png_uint_32 profile_len = 3;
             // int compression_type = 0;
-            // png_set_iCCP(write_ptr, write_info,
-            //     profile_name, compression_type,
-            //     profile_data, profile_len);
-
-            png_set_iCCP(write_ptr, write_info, name, compression, profile, len); //png_get_uint_32(profile)
+            png_set_iCCP(write_ptr, write_info, name, compression, profile, len);
             png_write_info(write_ptr, write_info);
             fclose(tmp);
         }
