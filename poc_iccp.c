@@ -36,7 +36,8 @@ int main() {
      * Malformed iCC profile (3 bytes instead of >= 4)
      */
     const char profile_name[] = "sRGB";
-    const png_charp profile_data = (png_charp)"ABC";
+    const char profile_data[] = "ABC";
+    png_const_bytep profile_ptr = profile_data;
     png_uint_32 profile_len = 3;
     int compression_type = 0;
 
